@@ -19,7 +19,9 @@ export const WebSocketProvider = ({ children }) => {
         };
 
         return () => {
-            client.close();
+            if (client) {
+                client.close();
+            }
         };
     }, []);
 

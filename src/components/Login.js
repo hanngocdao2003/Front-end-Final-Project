@@ -1,3 +1,4 @@
+// Login.js
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWebSocket } from './WebSocketContext';
@@ -16,12 +17,12 @@ const Login = () => {
             return;
         }
 
-        if (!client) {
+        if (!client || client.readyState !== WebSocket.OPEN) {
             setMessage('WebSocket connection not established');
             return;
         }
 
-        const message = {
+        const messageToSend = {
             action: 'onchat',
             data: {
                 event: 'LOGIN',
@@ -32,19 +33,19 @@ const Login = () => {
             }
         };
 
-        console.log('Sending message:', message);
-        client.send(JSON.stringify(message));
+        console.log('Sending message:', messageToSend);
+        client.send(JSON.stringify(messageToSend));
 
-        client.onmessage = (message) => {
-            console.log('Received message:', message.data);
-            const response = JSON.parse(message.data);
+        client.onmessage = (event) => {
+            console.log('Received message:', event.data);
+            const response = JSON.parse(event.data);
             if (response.status === 'success') {
                 setMessage('Login successful! Redirecting to chat...');
                 setTimeout(() => {
                     navigate('/chat');
                 }, 2000); // Redirect after 2 seconds
             } else {
-                setMessage('Login failed: ' + response.mes);
+                setMessage('Login failed: ' + response.message);
             }
         };
 

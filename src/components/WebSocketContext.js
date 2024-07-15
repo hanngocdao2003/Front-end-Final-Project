@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { w3cwebsocket as W3CWebSocket } from 'websocket';
+import React, {createContext, useContext, useEffect, useState} from 'react';
+import {w3cwebsocket as W3CWebSocket} from 'websocket';
 
 const WebSocketContext = createContext(null);
 
-export const WebSocketProvider = ({ children }) => {
+export const WebSocketProvider = ({children}) => {
     const [client, setClient] = useState(null);
 
     useEffect(() => {
@@ -16,6 +16,29 @@ export const WebSocketProvider = ({ children }) => {
         client.onclose = () => {
             console.log('WebSocket Client Disconnected');
             setClient(null);
+        };
+
+        client.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
+        client.onmessage = (message) => {
+            console.log('Received message from WebSocket:', message.data);
+            let response;
+            try {
+                response = JSON.parse(message.data);
+            } catch (e) {
+                console.error('Failed to parse message:', e);
+                return;
+            }
+
+            if (response && response.data) {
+                // Handle the event based on the type
+                // For now, you can add a handler or state to process the events
+                console.log('Processed message:', response);
+            } else {
+                console.error('Invalid message format:', response);
+            }
         };
 
         return () => {

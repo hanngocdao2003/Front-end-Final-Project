@@ -1,10 +1,11 @@
-import React, {createContext, useContext, useEffect, useState} from 'react';
-import {w3cwebsocket as W3CWebSocket} from 'websocket';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 const WebSocketContext = createContext(null);
 
-export const WebSocketProvider = ({children}) => {
+export const WebSocketProvider = ({ children }) => {
     const [client, setClient] = useState(null);
+    const [rooms, setRooms] = useState([]);
 
     useEffect(() => {
         const client = new W3CWebSocket('ws://140.238.54.136:8080/chat/chat');
@@ -36,6 +37,11 @@ export const WebSocketProvider = ({children}) => {
                 // Handle the event based on the type
                 // For now, you can add a handler or state to process the events
                 console.log('Processed message:', response);
+
+                // Update the rooms state if the event is related to room creation
+                if (response.event === 'CREATE_ROOM') {
+                    setRooms([...rooms, response.data]);
+                }
             } else {
                 console.error('Invalid message format:', response);
             }
@@ -46,10 +52,26 @@ export const WebSocketProvider = ({children}) => {
                 client.close();
             }
         };
-    }, []);
+    }, [rooms]);
+
+    const createRoom = (roomName) => {
+        if (client && client.readyState === client.OPEN) {
+            client.send(JSON.stringify({
+                action: 'onchat',
+                data: {
+                    event: 'CREATE_ROOM',
+                    data: {
+                        roomName: roomName
+                    }
+                }
+            }));
+        } else {
+            console.error('WebSocket connection is not ready');
+        }
+    };
 
     return (
-        <WebSocketContext.Provider value={client}>
+        <WebSocketContext.Provider value={{ client, createRoom }}>
             {children}
         </WebSocketContext.Provider>
     );

@@ -1,34 +1,30 @@
-// src/App.js
-import React, { useState } from 'react';
-import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
-import Login from './components/Login';
-import Register from './components/Register';
-import Chat from './components/Chat';
-import { WebSocketProvider } from './components/WebSocketContext';
-import UserList from "./components/UserList";
-import ChatBox from "./components/ChatBox";
-import './App.css';
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './components/Home';
+import LoginForm from "./components/Login";
+import Register from "./components/Register";
+import webSocketService from "./services/WebSocketService";
 
 function App() {
-    const [selectedUser, setSelectedUser] = useState(null);
-    const currentUser = { username: 'current_user' };
+    useEffect(() => {
+        webSocketService.connect('ws://140.238.54.136:8080/chat/chat');
+
+        return () => {
+            webSocketService.close();
+        };
+    }, []);
 
     return (
-        <WebSocketProvider>
-            <Router>
+        <Router>
+            <div className="App">
                 <Routes>
-                    <Route path="/" element={<Navigate to="/login" />} />
-                    <Route path="/login" element={<Login  />} />
+                    <Route path="/" element={<LoginForm />} />
+                    <Route path="/home" element={<Home />} />
+                    <Route path="/login" element={<LoginForm />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/chat" element={
-                        <div className="chat-container">
-                            <UserList onSelectUser={setSelectedUser} />
-                            {selectedUser && <ChatBox currentUser={currentUser} selectedUser={selectedUser} />}
-                        </div>
-                    } />
                 </Routes>
-            </Router>
-        </WebSocketProvider>
+            </div>
+        </Router>
     );
 }
 

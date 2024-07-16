@@ -1,83 +1,75 @@
-// Login.js
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useWebSocket } from './WebSocketContext';
-import '../Auth.css';
+import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
+import webSocketService from '../services/WebSocketService';
+import '../styles/Login.css';
 
 const Login = () => {
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [message, setMessage] = useState('');
-    const navigate = useNavigate();
-    const client = useWebSocket();
 
-    const handleLogin = () => {
-        if (!username || !password) {
-            setMessage('Username and Password are required');
-            return;
-        }
+    const handleLogin = (event) => {
+        event.preventDefault();
 
-        if (!client || client.readyState !== WebSocket.OPEN) {
-            setMessage('WebSocket connection not established');
-            return;
-        }
-
-        const messageToSend = {
+        const loginData = {
             action: 'onchat',
             data: {
                 event: 'LOGIN',
                 data: {
                     user: username,
                     pass: password,
-                }
-            }
+                },
+            },
         };
 
-        console.log('Sending message:', messageToSend);
-        client.send(JSON.stringify(messageToSend));
+        webSocketService.send(loginData);
+    };
 
-        client.onmessage = (event) => {
-            console.log('Received message:', event.data);
-            const response = JSON.parse(event.data);
-            if (response.status === 'success') {
-                setMessage('Login successful! Redirecting to chat...');
-                setTimeout(() => {
-                    navigate('/chat');
-                }, 2000); // Redirect after 2 seconds
-            } else {
-                setMessage('Login failed: ' + response.message);
-            }
-        };
+    const handleResponse = (data) => {
+        if (data.status === 'success') {
+            navigate('/home'); // Navigate to home page upon successful login
+        } else {
+            alert('Login failed. Please check your username and password.');
+        }
+    };
 
-        client.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            setMessage('WebSocket error');
-        };
+    // Register handleResponse as callback for login response
+    webSocketService.setLoginResponseCallback(handleResponse);
 
-        client.onclose = () => {
-            console.log('WebSocket connection closed');
-            setMessage('WebSocket connection closed');
-        };
+    const navigateToRegister = () => {
+        navigate('/register'); // Navigate to register page
     };
 
     return (
-        <div className="auth-container">
-            <h2>Login</h2>
-            <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <button onClick={handleLogin}>Login</button>
-            {message && <p>{message}</p>}
-            <p>Don't have an account? <Link to="/register">Register</Link></p>
+        <div className="container">
+            <div className="login-form">
+                <form onSubmit={handleLogin}>
+                    <div className="input-container">
+                        <label htmlFor="username" className="floating-label">Username</label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                        />
+                    </div>
+                    <div className="input-container">
+                        <label htmlFor="password" className="floating-label">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
+                    <div className="login-form-button">
+                        <button type="submit" id="loginBtn">Login</button>
+                        <button type="button" id="registerBtn" onClick={navigateToRegister}>Register</button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };

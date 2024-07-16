@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useWebSocket } from './WebSocketContext';
 
-const UserList = ({ onSelectUser }) => {
-    const client = useWebSocket();
+const UserList = ({ onSelectUser, onCreateRoom }) => {
+    const { client, createRoom } = useWebSocket();
     const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchError, setSearchError] = useState('');
+    const [newRoomName, setNewRoomName] = useState('');
+
 
     useEffect(() => {
         if (client) {
@@ -38,7 +40,7 @@ const UserList = ({ onSelectUser }) => {
     }, [client]);
 
     const handleSearch = () => {
-        if (client) {
+        if (client && client.readyState === client.OPEN) {
             client.send(JSON.stringify({
                 action: 'onchat',
                 data: {
@@ -77,6 +79,39 @@ const UserList = ({ onSelectUser }) => {
         }
     };
 
+
+    const handleCreateRoom = () => {
+        if (client && client.readyState === client.OPEN) {
+            createRoom(newRoomName);
+            setNewRoomName('');
+            onCreateRoom();
+        } else {
+            console.error('WebSocket connection is not ready');
+        }
+    };
+
+    const handleSend = () => {
+        if (client && client.readyState === WebSocket.OPEN) {
+            const message = {
+                action: 'onchat',
+                data: {
+                    event: 'SEND_MESSAGE',
+                    data: {
+                        "type": "room",
+                        "to": "abc",
+                        "mes": "hello"
+                    },
+                },
+            };
+            client.send(JSON.stringify(message));
+        } else if (client && client.readyState === WebSocket.CONNECTING) {
+
+            client.addEventListener('open', () => handleSend());
+        } else {
+            console.error('WebSocket connection is not ready');
+        }
+    };
+
     return (
         <div className="user-list">
             <h2>Users/Groups</h2>
@@ -88,6 +123,13 @@ const UserList = ({ onSelectUser }) => {
             />
             <button onClick={handleSearch}>Search</button>
             {searchError && <p style={{ color: 'red' }}>{searchError}</p>}
+            <input
+                type="text"
+                placeholder="New room name..."
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+            />
+            <button onClick={handleCreateRoom}>Create Room</button>
             <ul>
                 {users.map((user) => (
                     <li key={user.name} onClick={() => onSelectUser(user)}>

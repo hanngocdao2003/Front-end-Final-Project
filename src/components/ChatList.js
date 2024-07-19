@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ChatPerson from './ChatPerson';
-import webSocketService from '../services/WebSocketService'; // Ensure this path is correct
+import webSocketService from '../services/WebSocketService';
 
 const ChatList = ({ onSelectUser }) => {
     const [people, setUsers] = useState([]);

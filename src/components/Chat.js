@@ -1,19 +1,21 @@
-import React from 'react';
+import React from 'react'
+import { useState } from 'react';
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
 import '../styles/Chat.css';
 
 const Chat = () => {
-    const handleSelectUser = (user) => {
-        // Implement your logic to handle user selection
-        console.log('Selected user:', user);
-    };
+    const [selectedUser, setSelectedUser] = useState(null);
 
+    const handleSelectUser = (user) => {
+      setSelectedUser(user);
+    };
+  
     return (
-        <div className="chat-container">
-            <ChatList onSelectUser={handleSelectUser} />
-            <ChatWindow />
-        </div>
+      <div className="chat-app">
+        <ChatList onSelectUser={handleSelectUser} />
+        {selectedUser && <ChatWindow selectedUser={selectedUser} />}
+      </div>
     );
 };
 

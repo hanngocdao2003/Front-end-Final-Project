@@ -7,9 +7,7 @@ const ChatList = ({ onSelectUser }) => {
 
   useEffect(() => {
     const handleUserListResponse = (data) => {
-      console.log('handleUserListResponse called with data:', data);
       if (data.event === 'GET_USER_LIST' && data.status === 'success') {
-        console.log('User list received:', data.data);
         const sortedUsers = data.data.sort((user1, user2) => user2.actionTime - user1.actionTime);
         setUsers(sortedUsers);
       } else {
@@ -28,7 +26,6 @@ const ChatList = ({ onSelectUser }) => {
     initializeWebSocket();
 
     return () => {
-      console.log('Cleaning up user list response callback');
       webSocketService.setUserListResponseCallback(null);
     };
   }, []);
@@ -36,7 +33,12 @@ const ChatList = ({ onSelectUser }) => {
   return (
     <div className="chat-list">
       {people.map((user) => (
-        <ChatPerson key={user.name} name={user.name} onClick={() => onSelectUser(user)} />
+        <ChatPerson
+          key={user.name}
+          name={user.name}
+          latestMessage={user.latestMessage}
+          onClick={() => onSelectUser(user)}
+        />
       ))}
     </div>
   );

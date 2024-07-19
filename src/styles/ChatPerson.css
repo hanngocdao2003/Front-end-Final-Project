@@ -1,0 +1,17 @@
+.chat-person {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-person-name {
+    /* Add any necessary styling for the name here */
+}
+
+.chat-person-latest-message {
+    color: #888;
+    font-size: 0.9em;
+    margin-top: 5px;
+  }

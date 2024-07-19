@@ -7,7 +7,6 @@ import ChatService from '../services/WebSocketService'; // Adjust path as necess
 
 const Home = () => {
 
-
     return (
         <Container>
             <NavigationBar />

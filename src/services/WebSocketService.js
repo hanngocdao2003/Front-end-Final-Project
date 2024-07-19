@@ -1,131 +1,199 @@
 class WebSocketService {
-    constructor() {
-        this.socket = null;
-        this.onLoginResponse = null;
-        this.onLogoutResponse = null;
-        this.onUserListResponse = null;
-        this.onMessageReceived = null;
-        this.onRegistrationResponse = null;
-    }
+  constructor() {
+    this.socket = null;
+    this.onLoginResponse = null;
+    this.onLogoutResponse = null;
+    this.onUserListResponse = null;
+    this.onAuthError = null; // Callback for auth errors
+    this.isConnected = false;
+    this.pendingMessages = [];
+    this.reconnectAttempts = 0;
+    this.reLoginAttempted = false;
 
-    connect(url) {
-        this.socket = new WebSocket(url);
+    // Add event listener to manage connection when the page is reloaded or closed
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
+  }
 
-        this.socket.onopen = () => {
-            console.log('WebSocket connection established');
-        };
+  handleBeforeUnload = (event) => {
+    // Remove event listener to prevent default action when the page is reloaded
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+  };
 
-        this.socket.onmessage = (message) => {
-            const data = JSON.parse(message.data);
-            this.handleMessage(data);
-        };
+  connect(url) {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      this.socket = new WebSocket(url);
 
-        this.socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
+      this.socket.onopen = () => {
+        console.log('WebSocket connection established');
+        this.isConnected = true;
+        localStorage.setItem('isConnected', 'true');
+        this.reconnectAttempts = 0;
 
-        this.socket.onclose = () => {
-            console.log('WebSocket connection closed');
-        };
-    }
-
-    handleMessage(data) {
-        switch (data.event) {
-            case 'LOGIN':
-                if (this.onLoginResponse) {
-                    this.onLoginResponse(data);
-                }
-                break;
-            case 'LOGOUT':
-                if (this.onLogoutResponse) {
-                    this.onLogoutResponse(data);
-                }
-                break;
-            case 'GET_USER_LIST':
-                if (this.onUserListResponse) {
-                    this.onUserListResponse(data);
-                }
-                break;
-            case 'RECEIVE_CHAT':
-                if (this.onMessageReceived) {
-                    this.onMessageReceived(data);
-                }
-                break;
-            case 'REGISTER':
-                if (this.onRegistrationResponse) {
-                    this.onRegistrationResponse(data);
-                }
-                break;
-            default:
-                console.warn('Unhandled event:', data.event);
+        const reLoginCode = localStorage.getItem('RE_LOGIN_CODE');
+        const username = localStorage.getItem('username');
+        if (reLoginCode && username && !this.reLoginAttempted) {
+          this.sendReLogin(username, reLoginCode);
+        } else {
+          while (this.pendingMessages.length > 0) {
+            const message = this.pendingMessages.shift();
+            this.socket.send(JSON.stringify(message));
+          }
         }
-    }
-    setRegistrationResponseCallback(callback) {
-        this.onRegistrationResponse = callback;
-    }
 
-    send(data) {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify(data));
+        this.getUserList();
+      };
+
+      this.socket.onmessage = (message) => {
+        console.log('WebSocket message received:', message);
+        const data = JSON.parse(message.data);
+        this.handleMessage(data);
+      };
+
+      this.socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      this.socket.onclose = () => {
+        console.log('WebSocket connection closed');
+        this.isConnected = false;
+        localStorage.removeItem('isConnected');
+        this.reconnect();
+      };
+    }
+  }
+
+  reconnect() {
+    if (this.reconnectAttempts < 5) {
+      this.reconnectAttempts += 1;
+      console.log(`Reconnecting attempt ${this.reconnectAttempts}`);
+      setTimeout(() => {
+        this.connect('ws://140.238.54.136:8080/chat/chat');
+      }, this.reconnectAttempts * 1000);
+    } else {
+      console.warn('Max reconnect attempts reached.');
+    }
+  }
+
+  handleMessage(data) {
+    console.log('Handling WebSocket message:', data);
+    switch (data.event) {
+      case 'AUTH':
+        if (data.status === 'error') {
+          console.error('Auth error:', data.mes);
+          if (this.onAuthError) {
+            this.onAuthError(); // Notify auth error
+          }
         }
-    }
-
-    close() {
-        if (this.socket) {
-            this.socket.close();
+        break;
+      case 'LOGIN':
+        if (data.status === 'success') {
+          localStorage.setItem('RE_LOGIN_CODE', data.data.RE_LOGIN_CODE);
+          localStorage.setItem('username', data.data.user);
+          this.reLoginAttempted = false; // Reset re-login attempt flag
         }
+        if (this.onLoginResponse) {
+          this.onLoginResponse(data);
+        }
+        break;
+      case 'RE_LOGIN':
+        if (data.status === 'error') {
+            console.error('Re-login failed:', data.mes);
+            // Option 1: Redirect to login page and clear storage
+            window.location.href = '/login'; // Replace with your login page URL
+            localStorage.removeItem('RE_LOGIN_CODE');
+            localStorage.removeItem('isConnected');
+        } else if (data.status === 'success') {
+          console.log('Re-login successful');
+          this.reLoginAttempted = true; // Flag that re-login was attempted
+        }
+        break;
+      case 'LOGOUT':
+        if (this.onLogoutResponse) {
+          this.onLogoutResponse(data);
+        }
+        break;
+      case 'GET_USER_LIST':
+        if (this.onUserListResponse) {
+          this.onUserListResponse(data);
+        }
+        break;
+      default:
+        console.warn('Unhandled event:', data.event);
     }
+  }
 
-    setLoginResponseCallback(callback) {
-        this.onLoginResponse = callback;
+  send(data) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      console.log('Sending WebSocket data:', data);
+      this.socket.send(JSON.stringify(data));
+    } else {
+      console.warn('WebSocket connection not open. Storing pending message...');
+      this.pendingMessages.push(data);
+      if (!this.isConnected) {
+        this.connect('ws://140.238.54.136:8080/chat/chat');
+      }
     }
+  }
 
-    setLogoutResponseCallback(callback) {
-        this.onLogoutResponse = callback;
-    }
+  sendReLogin(username, reLoginCode) {
+    const reLoginData = {
+      action: 'onchat',
+      data: {
+        event: 'RE_LOGIN',
+        data: {
+          user: username,
+          code: reLoginCode,
+        },
+      },
+    };
+    this.send(reLoginData);
+  }
 
-    setUserListResponseCallback(callback) {
-        this.onUserListResponse = callback;
+  close() {
+    if (this.socket) {
+      console.log('Closing WebSocket connection');
+      this.socket.close();
     }
+  }
 
-    setMessageReceivedCallback(callback) {
-        this.onMessageReceived = callback;
-    }
+  setLoginResponseCallback(callback) {
+    this.onLoginResponse = callback;
+  }
 
-    sendMessage(type, to, message) {
-        const sendMessageData = {
-            action: 'onchat',
-            data: {
-                event: 'SEND_CHAT',
-                data: {
-                    type,
-                    to,
-                    mes: message,
-                },
-            },
-        };
-        this.send(sendMessageData);
-    }
+  setLogoutResponseCallback(callback) {
+    this.onLogoutResponse = callback;
+  }
 
-    logout() {
-        const logoutData = {
-            action: 'onchat',
-            data: {
-                event: 'LOGOUT',
-            },
-        };
-        this.send(logoutData);
-    }
+  setUserListResponseCallback(callback) {
+    this.onUserListResponse = callback;
+  }
 
-    getUserList() {
-        const userListData = {
-            action: 'onchat',
-            data: {
-                event: 'GET_USER_LIST',
-            },
-        };
-        this.send(userListData);
-    }
+  setAuthErrorCallback(callback) {
+    this.onAuthError = callback;
+  }
+
+  logout() {
+    const logoutData = {
+      action: 'onchat',
+      data: {
+        event: 'LOGOUT',
+      },
+    };
+    this.send(logoutData);
+    localStorage.removeItem('RE_LOGIN_CODE');
+    localStorage.removeItem('username');
+  }
+
+  getUserList() {
+    const userListData = {
+      action: 'onchat',
+      data: {
+        event: 'GET_USER_LIST',
+      },
+    };
+    console.log('Requesting user list with data:', userListData);
+    this.send(userListData);
+  }
 }
 
 const webSocketService = new WebSocketService();

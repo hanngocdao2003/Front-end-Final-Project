@@ -1,8 +1,11 @@
+// ChatPerson.js
 import React from 'react';
 
-const ChatPerson = ({ name }) => {
+const ChatPerson = ({ name, onClick }) => {
     return (
-        <div className = "chat-person" > { name } </div>
+        <div className="chat-person" onClick={onClick}>
+            {name}
+        </div>
     );
 };
 

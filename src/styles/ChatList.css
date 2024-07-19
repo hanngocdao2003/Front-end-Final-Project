@@ -1,0 +1,17 @@
+/* ChatList.css */
+.chat-list {
+    width: 100%;
+    background-color: #f0f0f0;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+}
+
+.chat-person {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.chat-person:hover {
+    background-color: #e0e0e0;
+}

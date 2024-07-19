@@ -4,6 +4,8 @@ class WebSocketService {
         this.onLoginResponse = null;
         this.onLogoutResponse = null;
         this.onUserListResponse = null;
+        this.onMessageReceived = null;
+        this.onRegistrationResponse = null;
     }
 
     connect(url) {
@@ -14,7 +16,6 @@ class WebSocketService {
         };
 
         this.socket.onmessage = (message) => {
-            console.log('WebSocket message received:', message);
             const data = JSON.parse(message.data);
             this.handleMessage(data);
         };
@@ -29,7 +30,6 @@ class WebSocketService {
     }
 
     handleMessage(data) {
-        console.log('Handling WebSocket message:', data);
         switch (data.event) {
             case 'LOGIN':
                 if (this.onLoginResponse) {
@@ -41,26 +41,37 @@ class WebSocketService {
                     this.onLogoutResponse(data);
                 }
                 break;
-            case 'GET_USER_LIST': // Update the event name to match the server response
+            case 'GET_USER_LIST':
                 if (this.onUserListResponse) {
                     this.onUserListResponse(data);
+                }
+                break;
+            case 'RECEIVE_CHAT':
+                if (this.onMessageReceived) {
+                    this.onMessageReceived(data);
+                }
+                break;
+            case 'REGISTER':
+                if (this.onRegistrationResponse) {
+                    this.onRegistrationResponse(data);
                 }
                 break;
             default:
                 console.warn('Unhandled event:', data.event);
         }
     }
+    setRegistrationResponseCallback(callback) {
+        this.onRegistrationResponse = callback;
+    }
 
     send(data) {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            console.log('Sending WebSocket data:', data);
             this.socket.send(JSON.stringify(data));
         }
     }
 
     close() {
         if (this.socket) {
-            console.log('Closing WebSocket connection');
             this.socket.close();
         }
     }
@@ -75,6 +86,25 @@ class WebSocketService {
 
     setUserListResponseCallback(callback) {
         this.onUserListResponse = callback;
+    }
+
+    setMessageReceivedCallback(callback) {
+        this.onMessageReceived = callback;
+    }
+
+    sendMessage(type, to, message) {
+        const sendMessageData = {
+            action: 'onchat',
+            data: {
+                event: 'SEND_CHAT',
+                data: {
+                    type,
+                    to,
+                    mes: message,
+                },
+            },
+        };
+        this.send(sendMessageData);
     }
 
     logout() {
@@ -94,7 +124,6 @@ class WebSocketService {
                 event: 'GET_USER_LIST',
             },
         };
-        console.log('Requesting user list with data:', userListData);
         this.send(userListData);
     }
 }

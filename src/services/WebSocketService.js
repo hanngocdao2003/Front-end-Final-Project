@@ -6,6 +6,7 @@ class WebSocketService {
       this.onUserListResponse = null;
       this.onAuthError = null;
       this.onChatHistoryResponse = null;
+      this.onNewMessageResponse = null; // Added this line
       this.isConnected = false;
       this.pendingMessages = [];
       this.reconnectAttempts = 0;
@@ -123,8 +124,10 @@ class WebSocketService {
             this.onChatHistoryResponse(data);
           }
           break;
-        case 'NEW_MESSAGE': // Assuming the event for new messages is 'NEW_MESSAGE'
-          this.updateLatestMessage(data.data);
+        case 'SEND_CHAT': // Handle the SEND_CHAT event
+          if (this.onNewMessageResponse) {
+            this.onNewMessageResponse(data);
+          }
           break;
         default:
           console.warn('Unhandled event:', data.event);
@@ -138,7 +141,6 @@ class WebSocketService {
       }
       this.users[from].latestMessage = mes;
   
-      // Notify the listeners about the updated user list
       if (this.onUserListResponse) {
         this.onUserListResponse({
           event: 'GET_USER_LIST',
@@ -203,6 +205,10 @@ class WebSocketService {
   
     setChatHistoryResponseCallback(callback) {
       this.onChatHistoryResponse = callback;
+    }
+  
+    setNewMessageResponseCallback(callback) { // Added this method
+      this.onNewMessageResponse = callback;
     }
   
     logout() {

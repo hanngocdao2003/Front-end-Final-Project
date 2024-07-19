@@ -4,6 +4,7 @@ import '../styles/ChatWindow.css';
 
 const ChatWindow = ({ selectedUser }) => {
   const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState('');
   const endOfMessagesRef = useRef(null); // Ref to the end of messages
 
   useEffect(() => {
@@ -48,6 +49,48 @@ const ChatWindow = ({ selectedUser }) => {
     return `${day}/${month}/${year} - ${hours}:${minutes}:${seconds}`;
   };
 
+  const handleInputChange = (e) => {
+    setMessageInput(e.target.value);
+  };
+
+  const handleSendMessage = () => {
+    if (messageInput.trim() === '') {
+      return;
+    }
+
+    const newMessage = {
+      id: Date.now(), // Temporary ID, replace with server ID if available
+      name: 'Me', // Assume the sender is 'Me', replace with actual sender name
+      mes: messageInput,
+      createAt: new Date().toISOString(), // Current timestamp
+    };
+
+    // Optimistically add the new message to the messages list
+    setMessages([...messages, newMessage]);
+
+    // Prepare message data
+    const messageData = {
+      action: 'onchat',
+      data: {
+        event: 'SEND_CHAT',
+        data: {
+          type: 'people',
+          to: selectedUser.name,
+          mes: messageInput
+        }
+      }
+    };
+
+    // Send the message using WebSocket service
+    webSocketService.send(messageData);
+
+    // Clear the input field
+    setMessageInput('');
+
+    // Optionally refetch messages to ensure consistency
+    // webSocketService.getChatHistory(selectedUser.name);
+  };
+
   return (
     <div className="chat-window">
       <div className="chat-messages">
@@ -65,8 +108,13 @@ const ChatWindow = ({ selectedUser }) => {
         <div ref={endOfMessagesRef} /> {/* Empty div to scroll into view */}
       </div>
       <div className="chat-input">
-        <input type="text" placeholder="Type your message..." />
-        <button>Send</button>
+        <input
+          type="text"
+          placeholder="Type your message..."
+          value={messageInput}
+          onChange={handleInputChange}
+        />
+        <button onClick={handleSendMessage}>Send</button>
       </div>
     </div>
   );

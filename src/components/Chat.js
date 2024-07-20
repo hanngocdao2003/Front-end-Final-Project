@@ -1,10 +1,9 @@
-// Chat.js
-import React, { useState } from 'react';
+import React, {useState, useEffect} from 'react';
 import UserList from './UserList';
 import ChatBox from './ChatBox';
 import '../Chat.css';
 
-const Chat = ({ currentUser }) => {
+const Chat = ({currentUser}) => {
     const [selectedUser, setSelectedUser] = useState(null);
 
     const handleSelectUser = (user) => {
@@ -14,11 +13,11 @@ const Chat = ({ currentUser }) => {
     return (
         <div className="chat-container">
             <div className="user-list-container">
-                <UserList onSelectUser={handleSelectUser} />
+                <UserList onSelectUser={handleSelectUser}/>
             </div>
             <div className="chat-box-container">
                 {selectedUser ? (
-                    <ChatBox selectedUser={selectedUser} currentUser={currentUser} />
+                    <ChatBox selectedUser={selectedUser} currentUser={currentUser}/>
                 ) : (
                     <div>Please select a user to chat with</div>
                 )}

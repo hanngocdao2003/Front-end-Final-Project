@@ -1,64 +1,107 @@
-// ChatBox.js
-import React, { useState, useEffect } from 'react';
-import { useWebSocket } from './WebSocketContext';
+import React, {useState, useEffect, useRef} from 'react';
+import {useWebSocket} from './WebSocketContext';
 import ChatMessage from './ChatMessage';
 import '../Chat.css';
 
-const ChatBox = ({ currentUser, selectedUser }) => {
-    const { client } = useWebSocket();
+const ChatBox = ({currentUser, selectedUser}) => {
+    const client = useWebSocket();
     const [chatMessages, setChatMessages] = useState([]);
     const [message, setMessage] = useState('');
+    const chatEndRef = useRef(null);
+
+    const LOCAL_STORAGE_KEY = `chatMessages_${selectedUser ? selectedUser.name : ''}`;
 
     useEffect(() => {
-        const fetchChatHistory = () => {
-            if (client && selectedUser) {
-                client.send(JSON.stringify({
-                    action: 'onchat',
-                    data: {
-                        event: 'GET_PEOPLE_CHAT_MES',
+        if (selectedUser) {
+            const savedMessages = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedMessages) {
+                setChatMessages(JSON.parse(savedMessages));
+            } else {
+                if (client) {
+                    client.send(JSON.stringify({
+                        action: 'onchat',
                         data: {
-                            name: selectedUser.username,
-                            page: 1
+                            event: 'GET_PEOPLE_CHAT_MES',
+                            data: {
+                                name: selectedUser.name,
+                                page: 1
+                            }
                         }
-                    }
-                }));
+                    }));
+                }
             }
-        };
-
-        fetchChatHistory();
+        } else {
+            setChatMessages([]);
+        }
 
         return () => {
             if (client) {
                 client.onmessage = null;
             }
         };
-    }, [client, selectedUser]);
+    }, [client, selectedUser, LOCAL_STORAGE_KEY]);
 
     useEffect(() => {
         if (client) {
-            client.onmessage = (message) => {
-                const dataFromServer = JSON.parse(message.data);
-                if (dataFromServer.data) {
-                    if (dataFromServer.data.event === 'GET_PEOPLE_CHAT_MES' && dataFromServer.data.status === 'success') {
-                        setChatMessages(dataFromServer.data.messages);
-                    } else if (dataFromServer.data.event === 'SEND_CHAT' && dataFromServer.data.status === 'success') {
-                        setChatMessages(prevMessages => [...prevMessages, dataFromServer.data.message]);
+            const handleMessage = (message) => {
+                try {
+                    const dataFromServer = JSON.parse(message.data);
+                    if (dataFromServer.event) {
+                        if (dataFromServer.event === 'GET_PEOPLE_CHAT_MES' && dataFromServer.status === 'success') {
+                            const messages = dataFromServer.data || [];
+                            setChatMessages(messages);
+                            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(messages));
+                        } else if (dataFromServer.event === 'SEND_CHAT' && dataFromServer.status === 'success') {
+                            const newMessage = {
+                                ...dataFromServer.data,
+                                timestamp: dataFromServer.data.timestamp || new Date().toISOString() // Default to current time if missing
+                            };
+                            setChatMessages(prevMessages => {
+                                const updatedMessages = [...prevMessages, newMessage];
+                                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedMessages));
+                                return updatedMessages;
+                            });
+                        }
                     }
+                } catch (e) {
+                    console.error('Failed to parse message:', e);
                 }
             };
+
+            client.onmessage = handleMessage;
+
+            return () => {
+                client.onmessage = null;
+            };
         }
-    }, [client]);
+    }, [client, LOCAL_STORAGE_KEY]);
+
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({behavior: "smooth"});
+    }, [chatMessages]);
 
     const handleSendMessage = () => {
         if (client && message.trim() !== '') {
+            const newMessage = {
+                sender: currentUser.username,
+                mes: message,
+                timestamp: new Date().toISOString(),
+            };
+            setChatMessages(prevMessages => {
+                const updatedMessages = [...prevMessages, newMessage];
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedMessages));
+                return updatedMessages;
+            });
+
             client.send(JSON.stringify({
                 action: 'onchat',
                 data: {
                     event: 'SEND_CHAT',
                     data: {
                         type: 'people',
-                        to: selectedUser.username,
-                        mes: message
+                        to: selectedUser.name,
+                        mes: message,
+                        timestamp: newMessage.timestamp
                     }
                 }
             }));
@@ -69,13 +112,19 @@ const ChatBox = ({ currentUser, selectedUser }) => {
     return (
         <div className="chat-box">
             <div className="chat-messages">
-                {chatMessages.map((msg, index) => (
-                    <ChatMessage
-                        key={index}
-                        message={msg.mes}
-                        isSent={msg.sender === currentUser.username}
-                    />
-                ))}
+                {chatMessages.length > 0 ? (
+                    chatMessages.map((msg, index) => (
+                        <ChatMessage
+                            key={index}
+                            message={msg.mes}
+                            isSent={msg.sender === currentUser.username}
+                            timestamp={msg.timestamp}
+                        />
+                    ))
+                ) : (
+                    <p>No messages yet.</p>
+                )}
+                <div ref={chatEndRef}/>
             </div>
             <div className="message-input">
                 <input

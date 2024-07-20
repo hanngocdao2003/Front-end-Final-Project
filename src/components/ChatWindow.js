@@ -5,7 +5,8 @@ import '../styles/ChatWindow.css';
 const ChatWindow = ({ selectedUser }) => {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
-  const endOfMessagesRef = useRef(null); // Ref to the end of messages
+  const endOfMessagesRef = useRef(null);
+  const currentUser = localStorage.getItem('username'); // Get current username
 
   useEffect(() => {
     if (selectedUser) {
@@ -15,7 +16,6 @@ const ChatWindow = ({ selectedUser }) => {
       // Set up WebSocket callback for chat history
       const handleChatHistoryResponse = (data) => {
         if (data.event === 'GET_PEOPLE_CHAT_MES' && data.status === 'success') {
-          // Sort messages in ascending order (oldest first)
           const sortedMessages = data.data.sort((a, b) => new Date(a.createAt) - new Date(b.createAt));
           setMessages(sortedMessages);
         } else {
@@ -25,26 +25,39 @@ const ChatWindow = ({ selectedUser }) => {
 
       webSocketService.setChatHistoryResponseCallback(handleChatHistoryResponse);
 
+      // Set up WebSocket callback for new messages
+      const handleNewMessage = (newMessage) => {
+        console.log('New message received:', newMessage);
+        if (newMessage.to === selectedUser.name || newMessage.name === selectedUser.name) {
+          setMessages(prevMessages => [...prevMessages, newMessage].sort((a, b) => new Date(a.createAt) - new Date(b.createAt)));
+        }
+      };
+
+      webSocketService.setNewMessageCallback(handleNewMessage);
+
       return () => {
-        console.log('Cleaning up chat history response callback');
         webSocketService.setChatHistoryResponseCallback(null);
+        webSocketService.setNewMessageCallback(null); // Clean up new message callback
       };
     }
   }, [selectedUser]);
 
   useEffect(() => {
-    // Scroll to the bottom when messages are updated
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear().toString().slice(-2); // Get last 2 digits of year
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    if (isNaN(date)) return 'Invalid Date';
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000 + 7 * 60 * 60 * 1000); // Adjust to GMT+7
+
+    const day = String(localDate.getDate()).padStart(2, '0');
+    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+    const year = localDate.getFullYear().toString().slice(-2); // Get last 2 digits of year
+    const hours = String(localDate.getHours()).padStart(2, '0');
+    const minutes = String(localDate.getMinutes()).padStart(2, '0');
+    const seconds = String(localDate.getSeconds()).padStart(2, '0');
 
     return `${day}/${month}/${year} - ${hours}:${minutes}:${seconds}`;
   };
@@ -60,7 +73,7 @@ const ChatWindow = ({ selectedUser }) => {
 
     const newMessage = {
       id: Date.now(), // Temporary ID, replace with server ID if available
-      name: 'Me', // Assume the sender is 'Me', replace with actual sender name
+      name: currentUser, // Use current user's name
       mes: messageInput,
       createAt: new Date().toISOString(), // Current timestamp
     };
@@ -86,9 +99,6 @@ const ChatWindow = ({ selectedUser }) => {
 
     // Clear the input field
     setMessageInput('');
-
-    // Optionally refetch messages to ensure consistency
-    // webSocketService.getChatHistory(selectedUser.name);
   };
 
   return (

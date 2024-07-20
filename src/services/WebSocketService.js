@@ -6,12 +6,13 @@ class WebSocketService {
     this.onUserListResponse = null;
     this.onAuthError = null;
     this.onChatHistoryResponse = null;
-    this.onNewMessage = null; // Callback for new messages
+    this.onNewMessage = null;
+    this.onRegistrationResponse = null; // Callback for registration response
     this.isConnected = false;
     this.pendingMessages = [];
     this.reconnectAttempts = 0;
     this.reLoginAttempted = false;
-    this.users = {}; // Store user data here
+    this.users = {};
 
     window.addEventListener('beforeunload', this.handleBeforeUnload);
   }
@@ -129,6 +130,11 @@ class WebSocketService {
           this.onNewMessage(data.data);
         }
         break;
+      case 'REGISTER':
+        if (this.onRegistrationResponse) {
+          this.onRegistrationResponse(data);
+        }
+        break;
       default:
         console.warn('Unhandled event:', data.event);
     }
@@ -190,6 +196,10 @@ class WebSocketService {
 
   setNewMessageCallback(callback) {
     this.onNewMessage = callback;
+  }
+
+  setRegistrationResponseCallback(callback) {
+    this.onRegistrationResponse = callback;
   }
 
   logout() {

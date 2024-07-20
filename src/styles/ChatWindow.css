@@ -13,11 +13,9 @@
   
   .chat-messages {
     flex: 1;
-    padding: 20px;
     overflow-y: auto;
-    background-color: #fff;
-    display: flex;
-    flex-direction: column;
+    padding: 10px;
+    background-color: #f9f9f9;
   }
 
   .chat-input {
@@ -70,7 +68,11 @@
   }
   
   .message-content {
-    margin-top: 20px; /* Adjusted to create space for sender's name */
+    word-wrap: break-word; /* Ensure text wraps */
+    white-space: pre-wrap; /* Preserve whitespace and line breaks */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align text to the top */
   }
   
   .timestamp {

@@ -29,7 +29,11 @@ const ChatWindow = ({ selectedUser }) => {
       const handleNewMessage = (newMessage) => {
         console.log('New message received:', newMessage);
         if (newMessage.to === selectedUser.name || newMessage.name === selectedUser.name) {
-          setMessages(prevMessages => [...prevMessages, newMessage].sort((a, b) => new Date(a.createAt) - new Date(b.createAt)));
+          const messageWithTimestamp = {
+            ...newMessage,
+            createAt: newMessage.createAt || new Date().toISOString(),
+          };
+          setMessages(prevMessages => [...prevMessages, messageWithTimestamp].sort((a, b) => new Date(a.createAt) - new Date(b.createAt)));
         }
       };
 
@@ -59,7 +63,7 @@ const ChatWindow = ({ selectedUser }) => {
     const minutes = String(localDate.getMinutes()).padStart(2, '0');
     const seconds = String(localDate.getSeconds()).padStart(2, '0');
 
-    return `${day}/${month}/${year} - ${hours}:${minutes}:${seconds}`;
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
   const handleInputChange = (e) => {
@@ -89,7 +93,8 @@ const ChatWindow = ({ selectedUser }) => {
         data: {
           type: 'people',
           to: selectedUser.name,
-          mes: messageInput
+          mes: messageInput,
+          createAt: new Date().toISOString() // Add timestamp to the message
         }
       }
     };
@@ -99,6 +104,13 @@ const ChatWindow = ({ selectedUser }) => {
 
     // Clear the input field
     setMessageInput('');
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent default behavior (e.g., form submission)
+      handleSendMessage(); // Send the message
+    }
   };
 
   return (
@@ -123,6 +135,7 @@ const ChatWindow = ({ selectedUser }) => {
           placeholder="Type your message..."
           value={messageInput}
           onChange={handleInputChange}
+          onKeyDown={handleKeyDown} // Add keydown event handler
         />
         <button onClick={handleSendMessage}>Send</button>
       </div>

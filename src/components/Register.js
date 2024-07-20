@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useWebSocket } from './WebSocketContext';
+import React, {useState} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
+import {useWebSocket} from './WebSocketContext';
 import '../Auth.css';
 
 const Register = () => {
@@ -16,12 +16,12 @@ const Register = () => {
             return;
         }
 
-        if (!client) {
+        if (!client || client.readyState !== WebSocket.OPEN) {
             setMessage('WebSocket connection not established');
             return;
         }
 
-        const message = {
+        const messageToSend = {
             action: 'onchat',
             data: {
                 event: 'REGISTER',
@@ -32,19 +32,19 @@ const Register = () => {
             }
         };
 
-        console.log('Sending message:', message);
-        client.send(JSON.stringify(message));
+        console.log('Sending message:', messageToSend);
+        client.send(JSON.stringify(messageToSend));
 
-        client.onmessage = (message) => {
-            console.log('Received message:', message.data);
-            const response = JSON.parse(message.data);
+        client.onmessage = (event) => {
+            console.log('Received message:', event.data);
+            const response = JSON.parse(event.data);
             if (response.status === 'success') {
                 setMessage('Registration successful! Redirecting to login...');
                 setTimeout(() => {
                     navigate('/login');
                 }, 2000); // Redirect after 2 seconds
             } else {
-                setMessage('Registration failed: ' + response.mes);
+                setMessage('Registration failed: ' + response.message);
             }
         };
 

@@ -16,19 +16,17 @@ const ChatBox = ({currentUser, selectedUser}) => {
             const savedMessages = localStorage.getItem(LOCAL_STORAGE_KEY);
             if (savedMessages) {
                 setChatMessages(JSON.parse(savedMessages));
-            } else {
-                if (client) {
-                    client.send(JSON.stringify({
-                        action: 'onchat',
+            } else if (client) {
+                client.send(JSON.stringify({
+                    action: 'onchat',
+                    data: {
+                        event: 'GET_PEOPLE_CHAT_MES',
                         data: {
-                            event: 'GET_PEOPLE_CHAT_MES',
-                            data: {
-                                name: selectedUser.name,
-                                page: 1
-                            }
+                            name: selectedUser.name,
+                            page: 1
                         }
-                    }));
-                }
+                    }
+                }));
             }
         } else {
             setChatMessages([]);

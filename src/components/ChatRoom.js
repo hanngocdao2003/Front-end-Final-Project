@@ -1,12 +1,15 @@
 import React from 'react';
 import '../styles/ChatRoom.css'; // Make sure you have appropriate styles
 
-const ChatRoom = ({ name, onClick }) => {
+const ChatRoom = ({ name, onClick, latestMessage }) => {
     return (
         <div className="chat-room" onClick={onClick}>
-            <h3>{name}</h3>
+          <div className="chat-room-name">{name}</div>
+          {latestMessage && (
+            <div className="chat-room-latest-message">{latestMessage.text}</div>
+          )}
         </div>
-    );
+      );
 };
 
 export default ChatRoom;

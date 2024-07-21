@@ -2,33 +2,16 @@
     padding: 15px;
     border-bottom: 1px solid #ddd;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
 }
 
-.chat-room-header {
-    margin-bottom: 10px;
+.chat-room-name {
+    /* Add any necessary styling for the name here */
 }
 
-.chat-room-header h3 {
-    margin: 0;
-    font-size: 18px;
-}
-
-.chat-room-users ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
-
-.chat-room-users li {
-    padding: 5px;
-    border-bottom: 1px solid #ddd;
-}
-
-.chat-room-users li:last-child {
-    border-bottom: none;
-}
-
-.chat-room-users p {
-    margin: 0;
-    color: #777;
-}
+.chat-room-latest-message {
+    color: #888;
+    font-size: 0.9em;
+    margin-top: 5px;
+  }

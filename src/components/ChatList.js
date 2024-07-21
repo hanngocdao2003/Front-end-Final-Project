@@ -4,7 +4,7 @@ import ChatRoom from './ChatRoom';
 import webSocketService from '../services/WebSocketService';
 import '../styles/ChatList.css';
 
-const ChatList = ({ onSelectUser }) => {
+const ChatList = ({ onSelectUser, onSelectRoom }) => {
   const [people, setPeople] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [view, setView] = useState('people');
@@ -32,16 +32,6 @@ const ChatList = ({ onSelectUser }) => {
       }
     };
 
-    const handleRoomChatHistoryResponse = (data) => {
-      if (data.event === 'GET_ROOM_CHAT_MES' && data.status === 'success') {
-        
-        const messages = Array.isArray(data.data.chatData) ? data.data.chatData : [];
-        const sortedMessages = messages.sort((a, b) => new Date(a.createAt) - new Date(b.createAt));
-        setRoomMessages(sortedMessages);
-      } else {
-        console.error('Unexpected data structure:', data);
-      }
-    };
 
     const initializeWebSocket = () => {
       if (!webSocketService.socket || webSocketService.socket.readyState !== WebSocket.OPEN) {
@@ -49,7 +39,6 @@ const ChatList = ({ onSelectUser }) => {
       }
       webSocketService.setUserListResponseCallback(handleUserListResponse);
       webSocketService.setJoinRoomResponseCallback(handleJoinRoomResponse);
-      webSocketService.setRoomChatHistoryResponseCallback(handleRoomChatHistoryResponse);
       webSocketService.getUserList(); // Initial fetch for user list
     };
 
@@ -139,12 +128,12 @@ const ChatList = ({ onSelectUser }) => {
             <ChatRoom
               key={room.id}
               name={room.name}
-              onClick={() => handleRoomClick(room.name)}
+              onClick={() => onSelectRoom(room)}
             />
           ))
         )}
       </div>
-      {selectedRoom && (
+      {/* {selectedRoom && (
         <div className="room-messages">
           <h3>Chat History for {selectedRoom}</h3>
           <ul>
@@ -161,7 +150,7 @@ const ChatList = ({ onSelectUser }) => {
             ))}
           </ul>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

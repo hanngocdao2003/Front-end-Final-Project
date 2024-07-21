@@ -245,6 +245,17 @@ class WebSocketService {
     this.send(userListData);
   }
 
+  sendGetRoomChatHistory(roomName) {
+    const message = {
+      action: 'onchat',
+      data: {
+        event: 'GET_ROOM_CHAT_MES',
+        data: { room: roomName, page: 1 },
+      },
+    };
+    this.send(message);
+  }
+
   sendGetRoomChatHistory(roomName, page = 1) {
     const chatHistoryData = {
       action: 'onchat',

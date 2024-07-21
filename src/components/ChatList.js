@@ -34,7 +34,12 @@ const ChatList = ({ onSelectUser }) => {
 
     const handleRoomChatHistoryResponse = (data) => {
       if (data.event === 'GET_ROOM_CHAT_MES' && data.status === 'success') {
-        setRoomMessages(data.data.messages); // Assuming 'messages' is the key containing chat history
+        
+        const messages = Array.isArray(data.data.chatData) ? data.data.chatData : [];
+        const sortedMessages = messages.sort((a, b) => new Date(a.createAt) - new Date(b.createAt));
+        setRoomMessages(sortedMessages);
+      } else {
+        console.error('Unexpected data structure:', data);
       }
     };
 
@@ -67,73 +72,97 @@ const ChatList = ({ onSelectUser }) => {
   };
 
   const filteredPeople = people.filter(user =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase())
+    user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredRooms = rooms.filter(room =>
-      room.name.toLowerCase().includes(searchQuery.toLowerCase())
+    room.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date)) return 'Invalid Date';
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000 + 7 * 60 * 60 * 1000); // Adjust to GMT+7
+
+    const day = String(localDate.getDate()).padStart(2, '0');
+    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+    const year = localDate.getFullYear().toString().slice(-2); // Get last 2 digits of year
+    const hours = String(localDate.getHours()).padStart(2, '0');
+    const minutes = String(localDate.getMinutes()).padStart(2, '0');
+    const seconds = String(localDate.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   return (
-      <div className="chat-list">
-        <div className="toggle-container">
-          <button
-              onClick={() => handleToggle('people')}
-              className={`toggle-button ${view === 'people' ? 'active' : ''}`}
-          >
-            People
-          </button>
-          <button
-              onClick={() => handleToggle('rooms')}
-              className={`toggle-button ${view === 'rooms' ? 'active' : ''}`}
-          >
-            Rooms
-          </button>
-        </div>
-        <div className="search-container">
-          <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className='search-input'
-          />
-        </div>
-        <div className="list-content">
-          {view === 'people' ? (
-              filteredPeople.map((user) => (
-                  <ChatPerson
-                      key={user.id}
-                      name={user.name}
-                      latestMessage={user.latestMessage}
-                      onClick={() => onSelectUser(user)}
-                  />
-              ))
-          ) : (
-              filteredRooms.map((room) => (
-                  <ChatRoom
-                      key={room.id}
-                      name={room.name}
-                      onClick={() => handleRoomClick(room.name)}
-                  />
-              ))
-          )}
-        </div>
-        {selectedRoom && (
-            <div className="room-messages">
-              <h3>Chat History for {selectedRoom}</h3>
-              <ul>
-                {roomMessages.map((message, index) => (
-                    <li key={index}>{message}</li> // Adjust according to the message structure
-                ))}
-              </ul>
-            </div>
+    <div className="chat-list">
+      <div className="toggle-container">
+        <button
+          onClick={() => handleToggle('people')}
+          className={`toggle-button ${view === 'people' ? 'active' : ''}`}
+        >
+          People
+        </button>
+        <button
+          onClick={() => handleToggle('rooms')}
+          className={`toggle-button ${view === 'rooms' ? 'active' : ''}`}
+        >
+          Rooms
+        </button>
+      </div>
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          className='search-input'
+        />
+      </div>
+      <div className="list-content">
+        {view === 'people' ? (
+          filteredPeople.map((user) => (
+            <ChatPerson
+              key={user.id}
+              name={user.name}
+              latestMessage={user.latestMessage}
+              onClick={() => onSelectUser(user)}
+            />
+          ))
+        ) : (
+          filteredRooms.map((room) => (
+            <ChatRoom
+              key={room.id}
+              name={room.name}
+              onClick={() => handleRoomClick(room.name)}
+            />
+          ))
         )}
       </div>
+      {selectedRoom && (
+        <div className="room-messages">
+          <h3>Chat History for {selectedRoom}</h3>
+          <ul>
+            {roomMessages.map((message) => (
+              <li key={message.id}>
+                <div className="message-header">
+                  <div className="sender-name">{message.name}</div>
+                </div>
+                <div className="message-content">
+                  {message.mes}
+                  <div className="timestamp">{formatDate(message.createAt)}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -42,11 +42,11 @@ const NewChatModal = ({ isOpen, onRequestClose }) => {
                         onChange={(e) => setChatType(e.target.value)}
                     >
                         <option value="people">People</option>
-                        <option value="group">Group</option>
+                        <option value="room">Room</option>
                     </select>
                 </div>
                 <div className="form-group">
-                    <label htmlFor="username">Username</label>
+                    <label htmlFor="username">Name</label>
                     <input
                         id="username"
                         type="text"

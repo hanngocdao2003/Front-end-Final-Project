@@ -1,6 +1,6 @@
 /* ChatList.css */
 .chat-list {
-    width: 100%;
+    width: 25%;
     background-color: #f0f0f0;
     border-right: 1px solid #ddd;
     overflow-y: auto;
@@ -15,3 +15,53 @@
 .chat-person:hover {
     background-color: #e0e0e0;
 }
+.toggle-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.toggle-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.toggle-button {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    color: #333;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 0 0.25rem;
+    flex: 1; /* Make buttons take equal space */
+    text-align: center;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+.toggle-button.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.list-content {
+    /* Add styles to make sure the content displays correctly */
+}
+/* your_stylesheet.css */
+.search-container {
+    display: flex; /* Allow centering the input */
+}
+
+.search-input {
+    width: 90%; /* Set desired width */
+    height: 30px; /* Set desired height */
+    padding: 5px 10px; /* Adjust padding */
+    border-radius: 20px; /* Add rounded corners */
+    border: 1px solid #ccc; /* Set border */
+    font-size: 16px; /* Adjust font size */
+    outline: none; /* Remove default outline */
+}
+  

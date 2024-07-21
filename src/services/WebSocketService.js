@@ -8,6 +8,8 @@ class WebSocketService {
     this.onChatHistoryResponse = null;
     this.onNewMessage = null;
     this.onRegistrationResponse = null; // Callback for registration response
+    this.onJoinRoomResponse = null; // New callback for join room response
+    this.onRoomChatHistoryResponse = null; // New callback for room chat history response
     this.isConnected = false;
     this.pendingMessages = [];
     this.reconnectAttempts = 0;
@@ -135,6 +137,16 @@ class WebSocketService {
           this.onRegistrationResponse(data);
         }
         break;
+      case 'JOIN_ROOM':
+        if (this.onJoinRoomResponse) {
+          this.onJoinRoomResponse(data);
+        }
+        break;
+      case 'GET_ROOM_CHAT_MES':
+        if (this.onRoomChatHistoryResponse) {
+          this.onRoomChatHistoryResponse(data);
+        }
+        break;
       default:
         console.warn('Unhandled event:', data.event);
     }
@@ -202,6 +214,14 @@ class WebSocketService {
     this.onRegistrationResponse = callback;
   }
 
+  setJoinRoomResponseCallback(callback) {
+    this.onJoinRoomResponse = callback;
+  }
+
+  setRoomChatHistoryResponseCallback(callback) {
+    this.onRoomChatHistoryResponse = callback;
+  }
+
   logout() {
     const logoutData = {
       action: 'onchat',
@@ -223,6 +243,21 @@ class WebSocketService {
     };
     console.log('Requesting user list with data:', userListData);
     this.send(userListData);
+  }
+
+  sendGetRoomChatHistory(roomName, page = 1) {
+    const chatHistoryData = {
+      action: 'onchat',
+      data: {
+        event: 'GET_ROOM_CHAT_MES',
+        data: {
+          name: roomName,
+          page: page,
+        },
+      },
+    };
+    console.log('Requesting room chat history with data:', chatHistoryData);
+    this.send(chatHistoryData);
   }
 
   getChatHistory(name) {

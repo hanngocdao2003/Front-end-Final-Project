@@ -6,34 +6,30 @@ const ChatWindow = ({ selectedUser }) => {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
   const endOfMessagesRef = useRef(null);
-  const currentUser = localStorage.getItem('username'); // Get current username
+  const currentUser = localStorage.getItem('username');
 
   useEffect(() => {
     if (selectedUser) {
-      // Request chat history for the selected user
       webSocketService.getChatHistory(selectedUser.name);
 
-      // Set up WebSocket callback for chat history
       const handleChatHistoryResponse = (data) => {
         if (data.event === 'GET_PEOPLE_CHAT_MES' && data.status === 'success') {
           const sortedMessages = data.data.sort((a, b) => new Date(a.createAt) - new Date(b.createAt));
           setMessages(sortedMessages);
-        } else {
+        } if (data.event === 'GET_ROOM_CHAT_MES' && data.status === 'success') {
+          const sortedMessages = data.data.sort((a, b) => new Date(a.createAt) - new Date(b.createAt));
+          setMessages(sortedMessages);
+        }
+        else {
           console.error('Unexpected chat history data:', data);
         }
       };
 
       webSocketService.setChatHistoryResponseCallback(handleChatHistoryResponse);
 
-      // Set up WebSocket callback for new messages
       const handleNewMessage = (newMessage) => {
-        console.log('New message received:', newMessage);
         if (newMessage.to === selectedUser.name || newMessage.name === selectedUser.name) {
-          const messageWithTimestamp = {
-            ...newMessage,
-            createAt: newMessage.createAt || new Date().toISOString(),
-          };
-          setMessages(prevMessages => [...prevMessages, messageWithTimestamp].sort((a, b) => new Date(a.createAt) - new Date(b.createAt)));
+          setMessages((prevMessages) => [...prevMessages, newMessage].sort((a, b) => new Date(a.createAt) - new Date(b.createAt)));
         }
       };
 
@@ -41,7 +37,7 @@ const ChatWindow = ({ selectedUser }) => {
 
       return () => {
         webSocketService.setChatHistoryResponseCallback(null);
-        webSocketService.setNewMessageCallback(null); // Clean up new message callback
+        webSocketService.setNewMessageCallback(null);
       };
     }
   }, [selectedUser]);
@@ -52,18 +48,18 @@ const ChatWindow = ({ selectedUser }) => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    if (isNaN(date)) return 'Invalid Date';
+    if (isNaN(date)) return 'Now';
     const offset = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - offset * 60 * 1000 + 7 * 60 * 60 * 1000); // Adjust to GMT+7
+    const localDate = new Date(date.getTime() - offset * 60 * 1000 + 7 * 60 * 60 * 1000);
 
     const day = String(localDate.getDate()).padStart(2, '0');
     const month = String(localDate.getMonth() + 1).padStart(2, '0');
-    const year = localDate.getFullYear().toString().slice(-2); // Get last 2 digits of year
+    const year = localDate.getFullYear().toString().slice(-2);
     const hours = String(localDate.getHours()).padStart(2, '0');
     const minutes = String(localDate.getMinutes()).padStart(2, '0');
     const seconds = String(localDate.getSeconds()).padStart(2, '0');
 
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    return `${day}/${month}/${year} - ${hours}:${minutes}:${seconds}`;
   };
 
   const handleInputChange = (e) => {
@@ -76,16 +72,14 @@ const ChatWindow = ({ selectedUser }) => {
     }
 
     const newMessage = {
-      id: Date.now(), // Temporary ID, replace with server ID if available
-      name: currentUser, // Use current user's name
+      id: Date.now(),
+      name: currentUser,
       mes: messageInput,
-      createAt: new Date().toISOString(), // Current timestamp
+      createAt: new Date().toISOString(),
     };
 
-    // Optimistically add the new message to the messages list
     setMessages([...messages, newMessage]);
 
-    // Prepare message data
     const messageData = {
       action: 'onchat',
       data: {
@@ -94,52 +88,49 @@ const ChatWindow = ({ selectedUser }) => {
           type: 'people',
           to: selectedUser.name,
           mes: messageInput,
-          createAt: new Date().toISOString() // Add timestamp to the message
+          createAt: new Date().toISOString()
         }
       }
     };
 
-    // Send the message using WebSocket service
     webSocketService.send(messageData);
-
-    // Clear the input field
     setMessageInput('');
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      e.preventDefault(); // Prevent default behavior (e.g., form submission)
-      handleSendMessage(); // Send the message
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
   return (
-    <div className="chat-window">
-      <div className="chat-messages">
-        {messages.map((message) => (
-          <div key={message.id} className="message">
-            <div className="message-header">
-              <div className="sender-name">{message.name}</div>
-            </div>
-            <div className="message-content">
-              {message.mes}
-              <div className="timestamp">{formatDate(message.createAt)}</div>
-            </div>
-          </div>
-        ))}
-        <div ref={endOfMessagesRef} /> {/* Empty div to scroll into view */}
+      <div className="chat-window">
+        <div className="chat-messages">
+          {messages.map((message) => (
+              <div key={message.id} className="message">
+                <div className="message-header">
+                  <div className="sender-name">{message.name}</div>
+                </div>
+                <div className="message-content">
+                  {message.mes}
+                  <div className="timestamp">{formatDate(message.createAt)}</div>
+                </div>
+              </div>
+          ))}
+          <div ref={endOfMessagesRef} /> {/* Empty div to scroll into view */}
+        </div>
+        <div className="chat-input">
+          <input
+              type="text"
+              placeholder="Type your message..."
+              value={messageInput}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown} // Add keydown event handler
+          />
+          <button onClick={handleSendMessage}>Send</button>
+        </div>
       </div>
-      <div className="chat-input">
-        <input
-          type="text"
-          placeholder="Type your message..."
-          value={messageInput}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown} // Add keydown event handler
-        />
-        <button onClick={handleSendMessage}>Send</button>
-      </div>
-    </div>
   );
 };
 

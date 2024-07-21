@@ -2,6 +2,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    font-family: 'Segoe UI', 'Segoe UI Emoji', 'Helvetica', 'Arial', sans-serif;
   }
   
   .chat-header {
@@ -65,14 +66,15 @@
   .sender-name {
     font-weight: bold;
     margin-bottom: 5px;
+    color: brown;
   }
   
   .message-content {
-    word-wrap: break-word; /* Ensure text wraps */
-    white-space: pre-wrap; /* Preserve whitespace and line breaks */
+    word-wrap: break-word;
+    white-space: pre-wrap;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Align text to the top */
+    align-items: flex-start;
   }
   
   .timestamp {
@@ -82,3 +84,13 @@
     bottom: 5px;
     right: 10px;
   }
+
+.emoji-picker {
+  position: absolute;
+  bottom: 60px;
+  right: 10px;
+  z-index: 1;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}

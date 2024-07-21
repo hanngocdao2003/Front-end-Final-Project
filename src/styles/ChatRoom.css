@@ -1,0 +1,34 @@
+.chat-room {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.chat-room-header {
+    margin-bottom: 10px;
+}
+
+.chat-room-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.chat-room-users ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.chat-room-users li {
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+.chat-room-users li:last-child {
+    border-bottom: none;
+}
+
+.chat-room-users p {
+    margin: 0;
+    color: #777;
+}

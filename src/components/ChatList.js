@@ -133,24 +133,6 @@ const ChatList = ({ onSelectUser, onSelectRoom }) => {
           ))
         )}
       </div>
-      {/* {selectedRoom && (
-        <div className="room-messages">
-          <h3>Chat History for {selectedRoom}</h3>
-          <ul>
-            {roomMessages.map((message) => (
-              <li key={message.id}>
-                <div className="message-header">
-                  <div className="sender-name">{message.name}</div>
-                </div>
-                <div className="message-content">
-                  {message.mes}
-                  <div className="timestamp">{formatDate(message.createAt)}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )} */}
     </div>
   );
 };

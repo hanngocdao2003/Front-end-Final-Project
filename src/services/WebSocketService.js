@@ -7,9 +7,9 @@ class WebSocketService {
     this.onAuthError = null;
     this.onChatHistoryResponse = null;
     this.onNewMessage = null;
-    this.onRegistrationResponse = null; // Callback for registration response
-    this.onJoinRoomResponse = null; // New callback for join room response
-    this.onRoomChatHistoryResponse = null; // New callback for room chat history response
+    this.onRegistrationResponse = null;
+    this.onJoinRoomResponse = null;
+    this.onRoomChatHistoryResponse = null;
     this.isConnected = false;
     this.pendingMessages = [];
     this.reconnectAttempts = 0;
@@ -129,7 +129,11 @@ class WebSocketService {
         break;
       case 'SEND_CHAT':
         if (this.onNewMessage) {
-          this.onNewMessage(data.data);
+          if (data.data && data.data.to) {
+            this.onNewMessage(data.data);
+          } else {
+            console.error('Message data missing or incorrect format in SEND_CHAT event:', data);
+          }
         }
         break;
       case 'REGISTER':
@@ -151,6 +155,7 @@ class WebSocketService {
         console.warn('Unhandled event:', data.event);
     }
   }
+  
 
   send(data) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -243,17 +248,6 @@ class WebSocketService {
     };
     console.log('Requesting user list with data:', userListData);
     this.send(userListData);
-  }
-
-  sendGetRoomChatHistory(roomName) {
-    const message = {
-      action: 'onchat',
-      data: {
-        event: 'GET_ROOM_CHAT_MES',
-        data: { room: roomName, page: 1 },
-      },
-    };
-    this.send(message);
   }
 
   sendGetRoomChatHistory(roomName, page = 1) {

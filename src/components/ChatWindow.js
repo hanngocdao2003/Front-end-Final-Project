@@ -41,7 +41,7 @@ const ChatWindow = ({ selectedUser, selectedRoom }) => {
 
       if (newMessage.to === selectedUser?.name || newMessage.name === selectedUser?.name) {
         setMessages((prevMessages) => [...prevMessages, newMessage].sort((a, b) => new Date(a.createAt) - new Date(b.createAt)));
-      } else if (newMessage.room === selectedRoom?.name) {
+      } else if (newMessage.to === selectedRoom?.name) {
         setRoomMessages((prevMessages) => [...prevMessages, newMessage].sort((a, b) => new Date(a.createAt) - new Date(b.createAt)));
       }
     };
@@ -116,7 +116,7 @@ const ChatWindow = ({ selectedUser, selectedRoom }) => {
           event: 'SEND_CHAT',
           data: {
             type: 'room',
-            room: selectedRoom.name,
+            to: selectedRoom.name,
             mes: messageInput,
             createAt: new Date().toISOString()
           }
